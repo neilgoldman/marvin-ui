@@ -3,10 +3,15 @@ import { Inject } from 'angular2/core';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component } from 'angular2/core';
 import { Http } from 'angular2/http';
 import 'rxjs/add/operator/map';
+import 'rxjs/add/operator/timeout';
+import 'rxjs/add/operator/retry';
+
 
 const minUpdateMS = 0.5 * 1000;
 const maxUpdateMS = 15 * 1000;
-const environmentRefreshMS = 10 * 1000;
+const environmentRefreshMS = 30 * 1000;
+
+const httpTimeoutMS = 2 * 1000;
 const maxHttpRetries = 5;
 const waitBetweenRetriesMS = 250;
 
@@ -59,15 +64,14 @@ export class Page1 {
             );
     }
 
-    checkSwitchState(deviceStr: string, numTries: number = 0) {
-        if (numTries > maxHttpRetries) {
-            return;
-        }
+    checkSwitchState(deviceStr: string) {
         this.http.get('http://10.0.0.42:5000/api/device/' + deviceStr)
+            .retry(maxHttpRetries)
             .map(res => res.json())
+            .timeout(httpTimeoutMS)
             .subscribe( // Like I said, I like one-liners :P (no I don't usually write code like this, but this one was fun)
             data => { this.changed = (this[deviceStr + 'On'] != (this[deviceStr + 'On'] = (data.state == 1)) ? !this.ref.markForCheck() : false) || this.changed },
-            err => { console.log(err); setTimeout(this.checkSwitchState(deviceStr, numTries + 1), waitBetweenRetriesMS) }
+            err => console.log(err)
             );
     }
 
