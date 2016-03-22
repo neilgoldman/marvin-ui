@@ -1,16 +1,18 @@
 import {Page} from 'ionic-angular';
 import { Inject } from 'angular2/core';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, NgClass, NgIf } from 'angular2/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component } from 'angular2/core';
 import { Http } from 'angular2/http';
 import 'rxjs/add/operator/map';
 
 const minUpdateMS = 0.5 * 1000;
 const maxUpdateMS = 15 * 1000;
+const environmentRefreshMS = 10 * 1000;
+const maxHttpRetries = 5;
+const waitBetweenRetriesMS = 250;
 
 @Page({
     templateUrl: 'build/pages/page1/page1.html',
 })
-// @Component({selector: 'Page1', changeDetection: ChangeDetectionStrategy.OnPush})
 export class Page1 {
     http; lampOn; speakersOn; ledsOn;
     private checkStateLoopMS; changed; prevState;
@@ -29,15 +31,11 @@ export class Page1 {
         }
 
         this.checkStateLoop();
-        this.http.post('http://10.0.0.42:5000/api/environment')
-            .map(res => res.json())
-            .subscribe(
-            err => console.log(err)
-            );
+        setInterval(this.refreshEnvironment(), environmentRefreshMS);
     }
 
     checkStateLoop() {
-        this.checkSwitchStates();
+        this.checkAllSwitchStates();
         if (this.changed) {
             this.checkStateLoopMS = minUpdateMS;
             this.changed = false;
@@ -53,38 +51,40 @@ export class Page1 {
         }, this.checkStateLoopMS);
     }
 
-    checkSwitchStates() {
-        this.http.get('http://10.0.0.42:5000/api/device/' + 'lamp')
+    refreshEnvironment() {
+        this.http.post('http://10.0.0.42:5000/api/environment')
+            .map(res => res.json())
+            .subscribe(
+            err => console.log(err)
+            );
+    }
+
+    checkSwitchState(deviceStr: string, numTries: number = 0) {
+        if (numTries > maxHttpRetries) {
+            return;
+        }
+        this.http.get('http://10.0.0.42:5000/api/device/' + deviceStr)
             .map(res => res.json())
             .subscribe( // Like I said, I like one-liners :P (no I don't usually write code like this, but this one was fun)
-            data => { this.changed = (this.lampOn != (this.lampOn = (data.state == 1)) ? !this.ref.markForCheck() : false) || this.changed },
-            err => console.log(err)
+            data => { this.changed = (this[deviceStr + 'On'] != (this[deviceStr + 'On'] = (data.state == 1)) ? !this.ref.markForCheck() : false) || this.changed },
+            err => { console.log(err); setTimeout(this.checkSwitchState(deviceStr, numTries + 1), waitBetweenRetriesMS) }
             );
-        this.http.get('http://10.0.0.42:5000/api/device/' + 'LEDLights')
-            .map(res => res.json())
-            .subscribe(
-            data => { this.changed = (this.ledsOn != (this.ledsOn = (data.state == 1)) ? !this.ref.markForCheck() : false) || this.changed },
-            err => console.log(err)
-            );
-        this.http.get('http://10.0.0.42:5000/api/device/' + 'speakers')
-            .map(res => res.json())
-            .subscribe(
-            data => { this.changed = (this.speakersOn != (this.speakersOn = (data.state == 1)) ? !this.ref.markForCheck() : false) || this.changed },
-            err => console.log(err)
-            );
+    }
+
+    checkAllSwitchStates() {
+        this.checkSwitchState('lamp');
+        this.checkSwitchState('leds');
+        this.checkSwitchState('speakers');
     }
 
     toggleWemoSwitch(name) {
         this.http.post('http://10.0.0.42:5000/api/device/' + name, { 'state': 'toggle' })
             .map(res => res.json())
             .subscribe(
-            data => { console.log(data); this.checkSwitchStates() },
-            err => console.log(err),
-            () => console.log('Toggling ' + name)
+            data => this.checkAllSwitchStates(),
+            err => console.log(err)
             );
     }
-
-
 }
 
 
