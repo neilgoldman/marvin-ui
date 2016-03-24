@@ -66,3 +66,4 @@ dist
 coverage/
 resources/
 www/build/
+.io-config.json
