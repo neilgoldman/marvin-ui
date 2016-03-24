@@ -1,7 +1,7 @@
 import {Page} from 'ionic-angular';
 import { Inject } from 'angular2/core';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component } from 'angular2/core';
-import { Http } from 'angular2/http';
+import { Http, Headers } from 'angular2/http';
 import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/timeout';
 import 'rxjs/add/operator/retry';
@@ -64,28 +64,44 @@ export class Page1 {
             );
     }
 
-    checkSwitchState(deviceStr: string) {
+    checkSwitchState(deviceStr: string, callback = (_) => { }) {
         this.http.get('http://10.0.0.42:5000/api/device/' + deviceStr)
             .retry(maxHttpRetries)
             .map(res => res.json())
             .timeout(httpTimeoutMS)
             .subscribe( // Like I said, I like one-liners :P (no I don't usually write code like this, but this one was fun)
-            data => { this.changed = (this[deviceStr + 'On'] != (this[deviceStr + 'On'] = (data.state == 1)) ? !this.ref.markForCheck() : false) || this.changed },
+            data => { this.changed = callback(data) || (this[deviceStr + 'On'] != (this[deviceStr + 'On'] = (data.state == 1)) ? !this.ref.markForCheck() : false) || this.changed },
             err => console.log(err)
             );
     }
 
-    checkAllSwitchStates() {
-        this.checkSwitchState('lamp');
-        this.checkSwitchState('leds');
-        this.checkSwitchState('speakers');
+    checkAllSwitchStates(callback = (_) => { }) {
+        this.checkSwitchState('lamp', callback);
+        this.checkSwitchState('leds', callback);
+        this.checkSwitchState('speakers', callback);
     }
 
-    toggleWemoSwitch(name) {
-        this.http.post('http://10.0.0.42:5000/api/device/' + name, { 'state': 'toggle' })
+    toggleWemoSwitch(name: string) {
+        this.setWemoSwitch(name, !this[name + 'On']);
+    }
+
+    setWemoSwitch(name: string, on: boolean, numTries = 5) {
+        var headers = new Headers();
+        headers.append('Content-Type', 'application/json');
+
+        this.http.post('http://10.0.0.42:5000/api/device/' + name,
+            JSON.stringify({ state: on ? 'on' : 'off' }),
+            { headers: headers }
+        )
             .map(res => res.json())
             .subscribe(
-            data => this.checkAllSwitchStates(),
+            data => {
+                this.checkSwitchState(name, data => {
+                    if (data.state != on) {
+                        setTimeout(this.setWemoSwitch(name, on, numTries - 1), 100);
+                    }
+                });
+            },
             err => console.log(err)
             );
     }
