@@ -6,7 +6,7 @@
     <ion-row>
         <ion-col width-33>
             <button full large [ngClass]="{'button-dark': !lampOn, 'button-light': lampOn}"
-            style="margin: 24px auto 0 auto; width: 85%; padding: 64px" (click)="toggleWemoSwitch('lamp')">
+            style="margin: 24px auto 0 auto; width: 85%; padding: 64px" (mousedown)="toggleWemoSwitch('lamp')">
                 <ion-icon name='md-bulb' is-active="false"></ion-icon>
                 Bedroom Lamp
             </button>
@@ -14,7 +14,7 @@
 
         <ion-col width-33>
             <button full large [ngClass]="{'button-dark': !ledsOn, 'button-light': ledsOn}"
-            style="margin: 24px auto 0 auto; width: 85%; padding: 64px" (click)="toggleWemoSwitch('LEDLights')">
+            style="margin: 24px auto 0 auto; width: 85%; padding: 64px" (mousedown)="toggleWemoSwitch('LEDLights')">
                 <ion-icon name='md-bulb' is-active="false"></ion-icon>
                 LED Lights
             </button>
@@ -22,7 +22,7 @@
 
         <ion-col width-33>
             <button full large [ngClass]="{'button-dark': !speakersOn, 'button-light': speakersOn}" 
-            style="margin: 24px auto 0 auto; width: 85%; padding: 64px" (click)="toggleWemoSwitch('speakers')">
+            style="margin: 24px auto 0 auto; width: 85%; padding: 64px" (mousedown)="toggleWemoSwitch('speakers')">
                 <ion-icon *ngIf="!speakersOn" name="md-volume-mute"></ion-icon>
                 <ion-icon *ngIf="speakersOn" name="md-volume-up"></ion-icon>
                 Speakers
