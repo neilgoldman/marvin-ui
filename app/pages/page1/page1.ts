@@ -20,6 +20,7 @@ const waitBetweenRetriesMS = 250;
 })
 export class Page1 {
     http; lampOn; speakersOn; ledsOn;
+    lampHttpTrying; speakersHttpTrying; ledsHttpTrying;
     private checkStateLoopMS; changed; prevState;
 
     constructor( @Inject(Http) http: Http, private ref: ChangeDetectorRef) {
@@ -27,6 +28,9 @@ export class Page1 {
         this.lampOn = false;
         this.speakersOn = false;
         this.ledsOn = false;
+        this.lampHttpTrying = false;
+        this.speakersHttpTrying = false;
+        this.ledsHttpTrying = false;
         this.checkStateLoopMS = minUpdateMS;
         this.changed = false;
         this.prevState = {
@@ -85,7 +89,12 @@ export class Page1 {
         this.setWemoSwitch(name, !this[name + 'On']);
     }
 
-    setWemoSwitch(name: string, on: boolean, numTries = 5) {
+    setWemoSwitch(name: string, on: boolean, numTries = 10) {
+        if (numTries === 0) {
+            this[name + 'HttpTrying'] = false;
+            return;
+        }
+        this[name + 'HttpTrying'] = true;
         var headers = new Headers();
         headers.append('Content-Type', 'application/json');
 
@@ -98,11 +107,13 @@ export class Page1 {
             data => {
                 this.checkSwitchState(name, data => {
                     if (data.state != on) {
-                        setTimeout(this.setWemoSwitch(name, on, numTries - 1), 100);
+                        setTimeout(this.setWemoSwitch(name, on, numTries - 1), 200);
+                    } else {
+                        this[name + 'HttpTrying'] = false;
                     }
                 });
             },
-            err => console.log(err)
+            err => {console.log(err); setTimeout(this.setWemoSwitch(name, on, numTries - 1), 100);}
             );
     }
 }
