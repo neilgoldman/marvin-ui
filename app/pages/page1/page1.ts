@@ -89,12 +89,16 @@ export class Page1 {
         this.setWemoSwitch(name, !this[name + 'On']);
     }
 
-    setWemoSwitch(name: string, on: boolean, numTries = 10) {
-        if (numTries === 0) {
+    setWemoSwitch(name: string, on: boolean, numTries = 10, retryTime = 250) {
+        if (numTries <= 0) {
             this[name + 'HttpTrying'] = false;
+            this.ref.markForCheck();
             return;
         }
+        // Flag this to show each switch's ion-spinner until their state changes, or we give up
         this[name + 'HttpTrying'] = true;
+        this.ref.markForCheck();
+
         var headers = new Headers();
         headers.append('Content-Type', 'application/json');
 
@@ -105,15 +109,19 @@ export class Page1 {
             .map(res => res.json())
             .subscribe(
             data => {
+                // Once we've got our response, send another request to check if the switch actually changed
+                // Then turn off the switch's HttpTrying flag on success, or retry on failure 
                 this.checkSwitchState(name, data => {
                     if (data.state != on) {
-                        setTimeout(this.setWemoSwitch(name, on, numTries - 1), 200);
+                        setTimeout(this.setWemoSwitch(name, on, numTries - 1, retryTime * 1.5), 300);
                     } else {
                         this[name + 'HttpTrying'] = false;
+                        this.ref.markForCheck();
                     }
                 });
             },
-            err => {console.log(err); setTimeout(this.setWemoSwitch(name, on, numTries - 1), 100);}
+            // Retry the request if we get an error
+            err => { console.log(err); setTimeout(this.setWemoSwitch(name, on, numTries - 1, retryTime * 1.5), 500); }
             );
     }
 }
