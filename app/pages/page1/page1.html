@@ -5,19 +5,21 @@
 <ion-content padding class="page1">
     <ion-row>
         <ion-col width-33>
-            <button full large [ngClass]="{'button-dark': !lampOn, 'button-light': lampOn}" style="margin: 24px auto 0 auto; width: 85%; padding: 64px" (mousedown)="toggleWemoSwitch('lamp')">
+            <button full large [ngClass]="{'button-dark': !lampOn, 'button-light': lampOn}" style="margin: 24px auto 0 auto; width: 85%; padding: 64px"
+                (touchstart)="toggleWemoSwitch('lamp')">
                 <ion-icon name='md-bulb' is-active="false"></ion-icon>
                 Bedroom Lamp
             </button>
             <div class="center-spinner">
-                <div *ngIf="lampHttpTrying">
+                <`div *ngIf="lampHttpTrying">
                     <ion-spinner></ion-spinner>
                 </div>
             </div>
         </ion-col>
 
         <ion-col width-33>
-            <button full large [ngClass]="{'button-dark': !ledsOn, 'button-light': ledsOn}" style="margin: 24px auto 0 auto; width: 85%; padding: 64px" (mousedown)="toggleWemoSwitch('leds')">
+            <button full large [ngClass]="{'button-dark': !ledsOn, 'button-light': ledsOn}" style="margin: 24px auto 0 auto; width: 85%; padding: 64px"
+                (touchstart)="toggleWemoSwitch('leds')">
                 <ion-icon name='md-bulb' is-active="false"></ion-icon>
                 LED Lights
             </button>
@@ -29,7 +31,8 @@
         </ion-col>
 
         <ion-col width-33>
-            <button full large [ngClass]="{'button-dark': !speakersOn, 'button-light': speakersOn}" style="margin: 24px auto 0 auto; width: 85%; padding: 64px" (mousedown)="toggleWemoSwitch('speakers')">
+            <button full large [ngClass]="{'button-dark': !speakersOn, 'button-light': speakersOn}" style="margin: 24px auto 0 auto; width: 85%; padding: 64px"
+                (touchstart)="toggleWemoSwitch('speakers')">
                 <ion-icon *ngIf="!speakersOn" name="md-volume-mute"></ion-icon>
                 <ion-icon *ngIf="speakersOn" name="md-volume-up"></ion-icon>
                 Speakers
